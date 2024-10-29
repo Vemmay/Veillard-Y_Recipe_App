@@ -1,6 +1,7 @@
-package com.example.recipeapp
+package com.example.recipeapp.network
 
 
+import com.example.recipeapp.Step
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 

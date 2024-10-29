@@ -1,6 +1,9 @@
 package com.example.recipeapp
 
 
+import com.example.recipeapp.network.Equipment
+import com.example.recipeapp.network.Ingredient
+import com.example.recipeapp.network.Length
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
