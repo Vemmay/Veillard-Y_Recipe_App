@@ -140,17 +140,9 @@ fun RecipeSearchScreen(viewModel: RecipeViewModel) {
         }
 
     } else {
-        val selectedRecipe = uiState.selectedRecipe!!
-        LaunchedEffect(key1 = uiState.selectedRecipe) {
-            uiState.selectedRecipe?.let { recipe ->
-                viewModel.getRecipeDetails(recipe.id)
-            }
-            uiState.selectedRecipe?.let { recipe ->
-                viewModel.getRecipeInstructions(recipe.id)
-            }
-        }
+
         RecipeDetailScreen(
-            recipe = selectedRecipe,
+            recipe = uiState.selectedRecipe!!,
             viewModel = viewModel,
             onBack = { viewModel.unselectRecipe() }
         )
@@ -170,6 +162,7 @@ fun RecipeItem(recipe: Recipe, onClick: (Recipe) -> Unit) {
                 .height(150.dp)
                 .fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider(color = Color.Gray, thickness = 1.dp)
     }
 }
@@ -178,18 +171,11 @@ fun RecipeItem(recipe: Recipe, onClick: (Recipe) -> Unit) {
 fun RecipeDetailScreen(recipe: Recipe, viewModel: RecipeViewModel, onBack: () -> Unit) {
     // Display the recipe details
     Column(modifier = Modifier.padding(16.dp)) {
-        viewModel.getRecipeDetails(recipe.id)
-        val recipeInstructions = viewModel.uiState.value?.recipeInstruction
-        val ingredients = viewModel.uiState.value?.ingredients
-
-        if (recipeInstructions == null) {
-            Text(text = "Loading recipe details...")
-            return@Column
-        }
-
+        LaunchedEffect(recipe.id) { viewModel.getRecipeDetails(recipe.id) }
         Button(onClick = onBack) {
             Text("Back")
         }
+
         Text(text = recipe.title, style = MaterialTheme.typography.titleLarge)
         Image(
             painter = rememberAsyncImagePainter(recipe.image),
@@ -199,9 +185,13 @@ fun RecipeDetailScreen(recipe: Recipe, viewModel: RecipeViewModel, onBack: () ->
                 .fillMaxWidth()
         )
 
-        Row{
+        if (viewModel.uiState.value?.recipeInstruction == null || viewModel.uiState.value?.ingredients == null) {
+            Text(text = "Loading recipe details...")
+            return@Column
+        } else {
+            Text(text = "Ingredients:", style = MaterialTheme.typography.titleMedium)
             LazyColumn {
-                items(ingredients ?: emptyList()) { ingredient ->
+                items(viewModel.uiState.value?.ingredients!!) { ingredient ->
                     Text(
                         text = ingredient.name,
                         modifier = Modifier.padding(8.dp), // Add padding for each ingredient item
@@ -209,15 +199,38 @@ fun RecipeDetailScreen(recipe: Recipe, viewModel: RecipeViewModel, onBack: () ->
                     )
                 }
             }
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(text = "Instructions:", style = MaterialTheme.typography.titleMedium)
-                recipeInstructions.forEachIndexed { index, instruction ->
-                    Text(
-                        text = "Step ${index + 1}: ${instruction.name}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(color = Color.Gray, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = "Instructions:", style = MaterialTheme.typography.titleMedium)
+            LazyColumn {
+                val steps = viewModel.uiState.value?.recipeInstruction!![0].steps
+                items(steps) { step ->
+                    Text("Step ${step.number}: ${step.step}")
+
+                    // Display ingredients if any
+                    if (step.ingredients?.isNotEmpty() == true) {
+                        Text("Ingredients:")
+                        step.ingredients?.forEach { ingredient ->
+                            Text("- ${ingredient.name}")
+                        }
+                    }
+
+                    // Display equipment if any
+                    if (step.equipment?.isNotEmpty() == true) {
+                        Text("Equipment:")
+                        step.equipment?.forEach { equipment ->
+                            Text("- ${equipment.name}")
+                        }
+                    }
+
+                    // Display length if any
+                    step.length?.let { length ->
+                        Text("Time: ${length.number} ${length.unit}")
+                    }
                 }
             }
+
         }
     }
 }

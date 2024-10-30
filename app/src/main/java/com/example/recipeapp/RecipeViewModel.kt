@@ -17,7 +17,7 @@ data class RecipeUiState(
     val isLoading: Boolean = false,
     val errorMessage: String = "",
     val selectedRecipe: Recipe? = null,
-    val ingredients: List<ExtendedIngredient> = emptyList(),
+    val ingredients: List<ExtendedIngredient>? = null,
     val recipeInstruction: List<AnalyzedInstruction>? = null,
     val searchQuery: String = "",
     val selectedCuisine: String? = null,
@@ -79,24 +79,10 @@ class RecipeViewModel(private val recipeRepository: RecipeRepository) : ViewMode
         viewModelScope.launch {
             _uiState.value = _uiState.value?.copy(isLoading = true, errorMessage = "")
             try {
-                val response = recipeRepository.getRecipeDetails(recipeId, API_KEY).extendedIngredients
-                _uiState.value = _uiState.value?.copy(ingredients = response)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value?.copy(errorMessage = "Network error: ${e.message}")
-                //log error
-                e.printStackTrace()
-            } finally {
-                _uiState.value = _uiState.value?.copy(isLoading = false)
-            }
-        }
-    }
+                val ingredientsResponse = recipeRepository.getRecipeDetails(recipeId, API_KEY).extendedIngredients
+                val instructionsResponse = recipeRepository.getRecipeInstructions(recipeId, API_KEY)
+                _uiState.value = _uiState.value?.copy(ingredients = ingredientsResponse, recipeInstruction = instructionsResponse)
 
-    fun getRecipeInstructions(recipeId: Int) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value?.copy(isLoading = true, errorMessage = "")
-            try {
-                val response = recipeRepository.getRecipeInstructions(recipeId, API_KEY)
-                _uiState.value = _uiState.value?.copy(recipeInstruction = response)
             } catch (e: Exception) {
                 _uiState.value = _uiState.value?.copy(errorMessage = "Network error: ${e.message}")
                 //log error
